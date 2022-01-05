@@ -1,0 +1,1 @@
+# pytesseract_tableform_text

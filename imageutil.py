@@ -14,6 +14,7 @@ MAX_BOUNDARY_AREA = 2400 * 1700 # Half of A4 size.
 
 def debugShow(imgname, img, isShow=True):
     if isShow & PROGRESS_SHOW:
+        cv2.namedWindow(imgname, cv2.WINDOW_NORMAL)
         cv2.imshow(imgname, img)
         cv2.waitKey(0)
 

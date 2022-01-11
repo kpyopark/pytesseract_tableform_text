@@ -9,8 +9,6 @@ from typing import List, Tuple
 from imageutil import *
 
 IMG_FILE = 'contract_house.png'
-PROGRESS_SHOW = True
-LINE_MIN_WIDTH = 3
 MAX_PIXEL = 3508
 MAX_WIDTH = 2480
 MAX_HEIGHT = MAX_PIXEL
@@ -334,7 +332,7 @@ def rotatePoint(point, center, angrad:float):
     point = (point[0] - center[0], point[1] - center[1])
     x = math.cos(angrad) * point[0] - math.sin(angrad) * point[1]
     y = math.sin(angrad) * point[0] + math.cos(angrad) * point[1]
-    point = (x + center[0], y + center[1])
+    point = (int(x + center[0]), int(y + center[1]))
     return point
 
 def recoverOriginalPoint(orgsize, resized, skewnessRad: float, topleft, bottomright) -> List[tuple(int, int)]:
@@ -348,7 +346,7 @@ def recoverOriginalPoint(orgsize, resized, skewnessRad: float, topleft, bottomri
     point2 = (resizedx1, resizedy2)
     point3 = (resizedx2, resizedy2)
     point4 = (resizedx2, resizedy1)
-    reverseang = skewnessRad * -1
+    reverseang = skewnessRad
     orgpoint1 = rotatePoint(point1, center, reverseang)
     orgpoint2 = rotatePoint(point2, center, reverseang)
     orgpoint3 = rotatePoint(point3, center, reverseang)

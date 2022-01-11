@@ -13,8 +13,8 @@ from imageutil import *
 from tablematrix import *
 from random import *
 import json
+import sys
 
-IMG_FILE = 'contract_house3.png'
 TEXT_MARGIN = 6
 MAJOR_KEYWORD_LIST = [
     '주민등록번호',
@@ -80,13 +80,13 @@ class ResultBody:
         self.skewness = skewneess
         self.tables = tables
         self.keyvalues = keyvalues
-    def toJson(self):
+    def toJson(self,indent=0,sortkey=False):
         rtn = {}
         rtn['imagesize'] = self.imagesize.__str__()
         rtn['skewness'] = self.skewness
         rtn['tables'] = self.tables
         rtn['keyvalues'] = self.keyvalues
-        return json.dumps(rtn)
+        return json.dumps(rtn,indent=indent,sort_keys=sortkey)
 '''
 request parameter =:
 use_capital_letter_to_match = true (default)
@@ -265,7 +265,7 @@ class MajorKeyword:
         rtn:List[MajorKeyword] = []
         for keyword in MAJOR_KEYWORD_LIST:
             rtn.append(MajorKeyword(keyword))
-        print(rtn)
+        # print(rtn)
         return rtn
     @staticmethod
     def convertKoreanToEngCap(kor:str) -> str:
@@ -450,7 +450,7 @@ def fillTextFromOCR(img, matrix:TableMatrix) -> TableMatrix:
             if len(textns) > 0:
                 cell.value = text
                 debugShow('ROI', filterForOCR(getROI(img,cell)), debug)
-                print("roi & text : {}, {}".format(cell.getEffectiveBoundary(), textns))
+                # print("roi & text : {}, {}".format(cell.getEffectiveBoundary(), textns))
                 matchedKey = MajorKeyword.matchKeyword(textns)
                 if matchedKey is not None:
                     print('text:{}, matched Key:{}'.format(text, matchedKey.koreanKeyword))
@@ -564,7 +564,7 @@ def handleFile(filepath):
     masked = orgimg
     maskedCells = []
     for k,v in kvs:
-        print('key:{}, value:{}'.format(k.value,v.value))
+        # print('key:{}, value:{}'.format(k.value,v.value))
         if k.matchedKeyword == '주민등록번호':
             maskedCells.append(v)
             # print(v.__getstate__())
@@ -574,8 +574,10 @@ def handleFile(filepath):
     resizedboundary = makeBoundary(denoized)
     result = makeResultBody(orgboundary, resizedboundary, angle, matrix, kvs)
     cv2.destroyAllWindows()
-    return result.toJson()
+    return result.toJson(4,True)
 
 if __name__ == '__main__':
-    handleFile(IMG_FILE)
+    args=sys.argv[1:]
+    resultBody = handleFile(args[0])
+    print(resultBody)
 

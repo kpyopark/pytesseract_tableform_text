@@ -1,9 +1,10 @@
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 from enum import Enum
 import numpy as np
 import math
+import json
 
 from numpy.lib.function_base import _calculate_shapes
 
@@ -22,8 +23,8 @@ class XPointGroup:
     __xps: List[int]
     y1: int = 0
     y2: int = 0
-    __prev: XPointGroup
-    __next: XPointGroup
+    __prev: XPointGroup = field(repr=False)
+    __next: XPointGroup = field(repr=False)
     def __init__(self) -> None:
         self.__xps = []
         self.__prev = None
@@ -74,7 +75,7 @@ class TLProp(Enum):
   HV_FULL_CLOSE = 4
   MG_PARTIAL_CLOSE = 8
   MG_FULL_CLOSE = 16
-  
+
 @dataclass(init=False)
 class YPointGroup:
     x1: int
@@ -86,8 +87,8 @@ class YPointGroup:
     xdelta: int
     height: int
     __xpgs: List[XPointGroup]
-    __prev: YPointGroup
-    __next: YPointGroup
+    __prev: YPointGroup = field(repr=False)
+    __next: YPointGroup = field(repr=False)
     def __init__(self, x1:int, y1:int, x2:int, y2:int):
         self.x1 = x1
         self.y1 = y1
@@ -265,7 +266,7 @@ class TableCell:
   orgbox: List[tuple(int, int)] # x, y
   topline: TLProp = TLProp.OPEN
   isMerged: bool = False
-  mergeHead: TableCell = None
+  mergeHead: TableCell = field(repr=False)
   x1ext: int = 0
   y1ext: int = 0
   x2ext: int = 0
@@ -275,7 +276,7 @@ class TableCell:
   tlext: TLProp = TLProp.OPEN
   xpg : XPointGroup = None
   ypg : YPointGroup = None
-  __leafs: List[TableCell]
+  __leafs: List["TableCell"] = field(repr=False)
   def __init__(self, row:int, col:int, x1:int, y1:int, x2:int, y2:int, tlprop:TLProp):
     self.row = row
     self.col = col
@@ -289,18 +290,6 @@ class TableCell:
     self.__leafs.append(self)
     self.orgbox = []
     self.mergeHead = self
-  def __str__(self) -> str:
-    repr = {
-      'RowIndex': self.row,
-      'RowSpan': self.rowspan,
-      'ColIndex': self.col,
-      'ColSpan': self.colspan,
-      'Value': self.value,
-      'Box': {
-
-      }
-    }
-    return 
   def checkMergedCellTopline(self):
     openedcell = []
     closedcell = []
@@ -390,6 +379,34 @@ class TableCell:
       leaf.tlext = leaf.topline
       leaf.__leafs.clear()
       leaf.__leafs.append(leaf)
+  def __getstate__(self):
+    state=self.__dict__.copy()
+    state.pop('__leafs', None)
+    state.pop('mergeHead', None)
+    state.pop('xpg', None)
+    state.pop('ypg', None)
+    state.pop('tlext', None)
+    state.pop('topline', None)
+    state.pop('_TableCell__leafs', None)
+    return state
+  def toDict(self):
+    rtn = {}
+    rtn['row'] = int(self.row)
+    rtn['col'] = int(self.col)
+    rtn['rowspan'] = int(self.rowspan)
+    rtn['colspan'] = int(self.colspan)
+    rtn['x1'] = int(self.x1)
+    rtn['y1'] = int(self.y1)
+    rtn['x2'] = int(self.x2)
+    rtn['y2'] = int(self.y2)
+    rtn['orgbox'] = self.orgbox
+    rtn['isMerged'] = self.isMerged
+    rtn['x1ext'] = int(self.x1ext)
+    rtn['y1ext'] = int(self.y1ext)
+    rtn['x2ext'] = int(self.x2ext)
+    rtn['y2ext'] = int(self.y2ext)
+    rtn['value'] = self.value
+    return rtn
 @dataclass(init=False)
 class TableRow:
   __cols: List[TableCell]
@@ -419,6 +436,29 @@ class TableRow:
       if cell.mergeHead == cell:
         rtn.append(cell)
     return rtn
+  def __getstate__(self):
+    state=self.__dict__.copy()
+    state.pop('ypg', None)
+    return state
+  def toJson(self):
+    rtn = []
+    for col in self.__cols:
+      rtn.append(col.__getstate__())
+      print(col.__getstate__())
+    return json.dumps(rtn)
+  def toDict(self):
+    rtn = []
+    for col in self.__cols:
+      rtn.append(col.__getstate__())
+      print(col.__getstate__())
+    return rtn
+  def toDictHeadCells(self):
+    rtn = []
+    for col in self.getIterable():
+      rtn.append(col.toDict())
+      # print(col.__getstate__())
+    return rtn
+
 @dataclass(init=False)
 class TableCol:
   __rows: List[TableCell]
@@ -444,6 +484,7 @@ class TableCol:
       if cell.mergeHead == cell:
         rtn.append(cell)
     return rtn
+
 @dataclass(init=False)
 class TableMatrix:
   cells: List[TableRow]
@@ -531,6 +572,40 @@ class TableMatrix:
       xpoints.sort()
       #print("all xpoints:{}".format(xpoints))
     return xpoints
-# if __name__ == '__main__':
-
+  def __getstate__(self):
+    state=self.__dict__.copy()
+    state.pop('xpoints', None)
+    return state
+  def toJson(self):
+    state=self.__dict__.copy()
+    state.pop('xpoints', None)
+    state.pop('cells', None)
+    rows = []
+    for row in self.cells:
+      rowdict = []
+      rowdict.append(row.toJson())
+    state['tables'] = json.dumps(rows)
+    return json.dumps(state)
+  def toDict(self):
+    state=self.__dict__.copy()
+    state.pop('xpoints', None)
+    state.pop('cells', None)
+    rows = []
+    for row in self.cells:
+      rowdict = []
+      rowdict.append(row.toDict())
+    state['tables'] = rows
+    return state
+  def toDictHeadCells(self):
+    state=self.__dict__.copy()
+    state.pop('xpoints', None)
+    state.pop('cells', None)
+    rows = []
+    for row in self.cells:
+      rows.append(row.toDictHeadCells())
+    state['tables'] = rows
+    return state
+if __name__ == '__main__':
+  cell = TableCell(1,1,10,10,10,10,TLProp.FULL_CLOSE)
+  print(cell.__getstate__())
 

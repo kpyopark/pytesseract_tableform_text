@@ -1,6 +1,6 @@
 from __future__ import annotations
 from sys import intern
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict, is_dataclass
 from collections.abc import Sequence
 from typing import List, Tuple
 import cv2
@@ -14,7 +14,7 @@ from tablematrix import *
 from random import *
 import json
 
-IMG_FILE = 'contract_house2.png'
+IMG_FILE = 'contract_house3.png'
 TEXT_MARGIN = 6
 MAJOR_KEYWORD_LIST = [
     '주민등록번호',
@@ -45,20 +45,48 @@ request = {
     'appended_keywords' : []
 }
 
-@dataclass
+@dataclass(init=False)
 class Boundary:
-    width: int
-    height: int
-@dataclass
+    width: float
+    height: float
+    def __init__(self, width:int, height:int):
+        self.width = width
+        self.height = height
+    def __str__(self):
+        rtn = {}
+        rtn['width'] = self.width
+        rtn['height'] = self.height
+        return rtn
+@dataclass(init=False)
 class ImageSize:
     org : Boundary
     resized : Boundary
-@dataclass
+    def __init__(self, org:Boundary, resized:Boundary):
+        self.org = org
+        self.resized = resized
+    def __str__(self):
+        rtn = {}
+        rtn['org'] = self.org.__str__()
+        rtn['resized'] = self.resized.__str__()
+        return rtn
+@dataclass(init=False)
 class ResultBody:
     imagesize: ImageSize
     skewness: float
-    
-
+    tables: List[List[dict]]
+    keyvalues: List[tuple(dict,dict)]
+    def __init__(self, imagesize:ImageSize, skewneess:float, tables:List[List[dict]], keyvalues:List[tuple(dict, dict)]):
+        self.imagesize = imagesize
+        self.skewness = skewneess
+        self.tables = tables
+        self.keyvalues = keyvalues
+    def toJson(self):
+        rtn = {}
+        rtn['imagesize'] = self.imagesize.__str__()
+        rtn['skewness'] = self.skewness
+        rtn['tables'] = self.tables
+        rtn['keyvalues'] = self.keyvalues
+        return json.dumps(rtn)
 '''
 request parameter =:
 use_capital_letter_to_match = true (default)
@@ -436,14 +464,12 @@ def calculateOriginalPoint(orgimg, resizedimg, skewness:float, matrix:TableMatri
     for inx in range(0,matrix.maxrow-1):
         row = matrix.getRow(inx)
         ypg = row.ypg
+        snewRad = math.radians(skewness)
         for headCell in row.getIterable():
-            headCell.orgbox = dk.recoverOriginalPoint(orgsize, modsize, skewness, (headCell.x1ext, headCell.y1ext), (headCell.x2ext, headCell.y2ext))
+            headCell.orgbox = dk.recoverOriginalPoint(orgsize, modsize, snewRad, (headCell.x1ext, headCell.y1ext), (headCell.x2ext, headCell.y2ext))
             for linenum, line in enumerate(headCell.orgbox[:-1]):
                 x1, y1 = line
                 x2, y2 = headCell.orgbox[linenum+1]
-                print('line:{}'.format(line))
-                print('x1,y1:{},{}'.format(x1,y1))
-                print('x2,y2:{},{}'.format(x2,y2))
                 cv2.line(linecopy,(x1,y1), (x2,y2), (255,150,150), 3, 1)
             cv2.line(linecopy,(x2,y2), (headCell.orgbox[0][0],headCell.orgbox[0][1]), (255,150,150), 3, 1)
     return linecopy
@@ -471,20 +497,85 @@ def makeKeyValuePairs(matrix:TableMatrix) -> List[tuple(str,str)]:
                 rtn.append((keyvalue['key'], keyvalue['value']))
     return rtn
 
-if __name__ == '__main__':
+def makeKeyValuePairWithTableCell(matrix:TableMatrix) -> List[tuple(TableCell, TableCell)]:
+    rtn:List[tuple(TableCell, TableCell)] = []
+    for _, row in enumerate(matrix.cells):
+        columnBasePairCount: int = 0
+        rowBasePairCount:int = 0
+        columns = row.getIterable()
+        for _, cell in enumerate(columns[:-1]):
+            keycell = None
+            valuecell = None
+            if cell.isKeywordCell():
+                keycell = cell
+                nextcell = row.getRightHeadCell(cell)
+                lowercell = matrix.getLowerHeadCell(cell)
+                if (nextcell is not None
+                    and not nextcell.isKeywordCell()):
+                    columnBasePairCount += 1
+                    valuecell =  nextcell
+                elif (lowercell is not None
+                    and not lowercell.isKeywordCell()):
+                    rowBasePairCount += 1
+                    valuecell = lowercell
+            if keycell is not None and valuecell is not None and len(keycell.value) > 0:
+                rtn.append((keycell, valuecell))
+    return rtn
 
+def makeMaskedImageFromOriginal(img, maskedCells:List[TableCell]):
+    imgcopy = np.copy(img)
+    for maskedCell in maskedCells:
+        points = []
+        for x,y in maskedCell.orgbox:
+            points.append([int(x),int(y)])
+        pointsnd = np.array(points, np.int32)
+        # https://stackoverflow.com/questions/17241830/opencv-polylines-function-in-python-throws-exception
+        pointsnd = pointsnd.reshape(-1,1,2)
+        cv2.fillConvexPoly(imgcopy, pointsnd, (50,50,50), 8)
+    return imgcopy
+
+class EnhancedJSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if is_dataclass(o):
+            return asdict(o)
+        return super().default(o)
+
+def makeBoundary(img) -> Boundary:
+    return Boundary(img.shape[0], img.shape[1])
+
+def makeResultBody(orgboundary:Boundary, resizedboundary:Boundary, skewness:float, matrix:TableMatrix, keyvalues:List[tuple(TableCell, TableCell)]) -> ResultBody:
+    imageSize = ImageSize(orgboundary, resizedboundary)
+    kvs = []
+    for key,value in keyvalues:
+        obj = { 'key' : key.toDict(), 'value': value.toDict() }
+        kvs.append(obj)
+    result = ResultBody(imageSize, skewness, matrix.toDictHeadCells(), kvs)
+    return result
+
+def handleFile(filepath):
     debug = False
-    matched = MajorKeyword.matchKeyword('전화번호')
-    print(matched)
-    if debug:
-        denoized = cv2.cvtColor(cv2.imread(IMG_FILE + ".denozied.png"), cv2.COLOR_BGR2GRAY)
-    else:
-        orgimg, denoized, angle = preprocessing(IMG_FILE)
+    orgimg, denoized, angle = preprocessing(filepath)
     matrix = getMatrixFromVHLine(denoized)
     matrix = fillTextFromOCR(denoized, matrix)
+    # print(matrix.toJson())
     orgline = calculateOriginalPoint(orgimg, denoized, angle, matrix)
     debugShow('orglines', orgline, debug)
-    kvs = makeKeyValuePairs(matrix)
+    kvs = makeKeyValuePairWithTableCell(matrix)
+    masked = orgimg
+    maskedCells = []
     for k,v in kvs:
-        print('key:{}, value:{}'.format(k,v))
+        print('key:{}, value:{}'.format(k.value,v.value))
+        if k.matchedKeyword == '주민등록번호':
+            maskedCells.append(v)
+            # print(v.__getstate__())
+    masked = makeMaskedImageFromOriginal(masked, maskedCells)
+    debugShow('maskedimage', masked, debug) 
+    orgboundary = makeBoundary(orgimg)
+    resizedboundary = makeBoundary(denoized)
+    result = makeResultBody(orgboundary, resizedboundary, angle, matrix, kvs)
     cv2.destroyAllWindows()
+    return result.toJson()
+
+if __name__ == '__main__':
+    handleFile(IMG_FILE)
+

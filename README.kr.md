@@ -9,9 +9,10 @@
  - image masking for Residential ID field.
  - Key / Value pair
 
-# Test 방법
+## Test 방법
 (requirements.txt 정리중)
 필요한 모듈을 pip를 통해서 설치합니다. 
+
 (GUI 가 필요할 경우)
 x window를 활용할 수 있는 xlaunch 프로그램 (예를 들어 XING, MING, VcXsrv 등)을 설치하고 기동합니다.
 
@@ -21,7 +22,13 @@ cd pytesseract_tableform_text
 python3 ./sample.py <<file path>>
 ```
 
-# Algorithm #1. Image deskewing
+## Enabling hidden features
+현재, Local File에 있는 Image를 대상으로 처리하게 구성되어 있습니다. 
+또한, 주민번호 Cell을 Mask 처리한 이미지는 별도로 저장하지 않습니다. 해당 이미지를 Local에 저장하기 위해서는 sample.py 상단에 있는 ENABLE_MASKED_IMAGE_STORED를
+True로 변경할 경우, 원본 파일이 있는 위치에 '.masked.png' 라는 확장자를 가진 masked image file이 생성됩니다
+유사하게 denoized 된 이미지를 저장할 수 있는 기능을 활성화 하기 위해서는 ENABLE_DENOIZED_IMAGE_STORED 기능을 활성화 해야 합니다.
+
+## Algorithm #1. Image deskewing
 
 많은 공적 문서에는, 테이블을 구성하는 많은 수직/수평선이 포함되어 있습니다. 
 이 부분을 최대한 활용하여, 정확한 수평라인 맞추기를 진행하도록 구성되어 있습니다. 

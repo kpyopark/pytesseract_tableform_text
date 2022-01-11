@@ -22,11 +22,95 @@ cd pytesseract_tableform_text
 python3 ./sample.py <<file path>>
 ```
 
-## Enabling hidden features
+## 중간 처리 이미지 저장 기능 활성화
+
 현재, Local File에 있는 Image를 대상으로 처리하게 구성되어 있습니다. 
 또한, 주민번호 Cell을 Mask 처리한 이미지는 별도로 저장하지 않습니다. 해당 이미지를 Local에 저장하기 위해서는 sample.py 상단에 있는 ENABLE_MASKED_IMAGE_STORED를
 True로 변경할 경우, 원본 파일이 있는 위치에 '.masked.png' 라는 확장자를 가진 masked image file이 생성됩니다
 유사하게 denoized 된 이미지를 저장할 수 있는 기능을 활성화 하기 위해서는 ENABLE_DENOIZED_IMAGE_STORED 기능을 활성화 해야 합니다.
+
+## 키워드 추출 방법
+
+Key / Pair 를 생성하기 위해서는 일단, 기준이 되는 Key가 필요합니다. 
+이 부분을 정의하기 위해서는, sample.py에 있는 MAJOR_KEYWORD_LIST에 한글 키워드을 추가하시기 바랍니다. 
+현재 공공문서에서 많이 활용하는 키워드를 입력해 놓았습니다. 
+
+필요할 경우 해당 List에 추가하시면 됩니다. 
+
+키워드 매칭을 위하여, Exact matching을 사용할 경우, OCR 오탐오류등으로 인하여 매칭이 안될 수 있습니다. 
+예를 들어, "주민등록번호"의 경우 "즈민등륵빈호" 로 익신 될 수 있습니다. 
+
+이를 완화하기 위하여 영문첫글자를 추출하여, 자음비교를 수행합니다. OCR에 인식된 Text는 그대로 Cell의 Value값에 들어가 있기 때문에 그대로 활용하면 됩니다.
+
+## Response Body
+
+현재 입력은 Input File Path만 잡게 되어 있습니다. 향후에는 serverless 상에서 다양한 옵션을 활용할 수 있도록 지원할 예정입니다.
+이후, 처리 후 결과는 ResponseBody라는 클래스에 집결되어 JSON 형태로 전환됩니다. 
+
+Response Body를 보면 먼저, 
+원본이미지와 Resized 이미지의 정보를 담고 있고, 이후, 문서의 수평기울기(비틀림)을 Degree 형태로 보여주는 Skewness 항목이 있습니다. 
+이후, tables 항목에서는 각 Cell 단위별, rowspancolspan및 실제 merge되어 있는 활성화되어 있는 cell 의 box 정보와 OCR에서 추출한 Text 정보가 들어 있습니다.
+```
+reponse_body = {
+    'imagesize' : {
+        'org' : {
+            'width' : <<>>,
+            'height' : <<>>
+        },
+        'resized' : {
+            'width' : <<>>,
+            'height' : <<>>
+        }
+    }
+    'skewness' : <<skewness of original image>>
+    'tables' : [
+        [
+            {
+                'rowIndex': 0,
+                'rowSpan': 1,
+                'colIndex': 0,
+                'colSpan': 1,
+                'value': <<extracted value from tesseract>>
+                'box': [ 
+                    {
+                        'x': <<pixel>>,
+                        'y': <<pixel>>
+                    },
+                    {
+                        'x': <<pixel>>,
+                        'y': <<pixel>>
+                    },
+                    {
+                        'x': <<pixel>>,
+                        'y': <<pixel>>
+                    },
+                    {
+                        'x': <<pixel>>,
+                        'y': <<pixel>>
+                    }
+                ]
+                'originalbox': [
+                    {
+                        'x': <<pixel>>,
+                        'y': <<pixel>>
+                    },
+                    {
+                        'x': <<pixel>>,
+                        'y': <<pixel>>
+                    },
+                    {
+                        'x': <<pixel>>,
+                        'y': <<pixel>>
+                    },
+                    {
+                        'x': <<pixel>>,
+                        'y': <<pixel>>
+                    }
+                ]
+            },
+            ...
+
+```
 
 ## Algorithm #1. Image deskewing
 

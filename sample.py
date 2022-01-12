@@ -1,12 +1,10 @@
 from __future__ import annotations
-from sys import intern
-from dataclasses import dataclass, field, asdict, is_dataclass
+from dataclasses import dataclass, asdict, is_dataclass
 from collections.abc import Sequence
 from typing import List, Tuple
 import cv2
 import numpy as np
 import math
-from numpy.lib.utils import deprecate
 import pytesseract as pt
 import deskew as dk
 from imageutil import *
@@ -14,6 +12,11 @@ from tablematrix import *
 from random import *
 import json
 import sys
+
+ENABLE_MASKED_IMAGE_STORED = False
+MASKED_IMAGE_FILE_EXT = '.masked.png'
+ENALBE_DENOIZED_IMAGE_STORED = False
+DENOIZED_IMAGE_FILE_EXT = '.denoized.png'
 
 TEXT_MARGIN = 6
 MAJOR_KEYWORD_LIST = [
@@ -555,9 +558,10 @@ def makeResultBody(orgboundary:Boundary, resizedboundary:Boundary, skewness:floa
 def handleFile(filepath):
     debug = False
     orgimg, denoized, angle = preprocessing(filepath)
+    if ENALBE_DENOIZED_IMAGE_STORED:
+        cv2.imwrite(filepath + DENOIZED_IMAGE_FILE_EXT)
     matrix = getMatrixFromVHLine(denoized)
     matrix = fillTextFromOCR(denoized, matrix)
-    # print(matrix.toJson())
     orgline = calculateOriginalPoint(orgimg, denoized, angle, matrix)
     debugShow('orglines', orgline, debug)
     kvs = makeKeyValuePairWithTableCell(matrix)
@@ -569,6 +573,8 @@ def handleFile(filepath):
             maskedCells.append(v)
             # print(v.__getstate__())
     masked = makeMaskedImageFromOriginal(masked, maskedCells)
+    if ENABLE_MASKED_IMAGE_STORED:
+        cv2.imwrite(filepath + MASKED_IMAGE_FILE_EXT)
     debugShow('maskedimage', masked, debug) 
     orgboundary = makeBoundary(orgimg)
     resizedboundary = makeBoundary(denoized)

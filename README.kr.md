@@ -20,7 +20,10 @@ x window를 활용할 수 있는 xlaunch 프로그램 (예를 들어 XING, MING,
 git clone <<this project>>
 cd pytesseract_tableform_text
 python3 ./sample.py <<file path>>
+
 ```
+## WSL 에서 사용하기
+(작성중)
 
 ## 중간 처리 이미지 저장 기능 활성화
 

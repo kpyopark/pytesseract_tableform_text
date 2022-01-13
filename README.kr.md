@@ -20,7 +20,10 @@ x window를 활용할 수 있는 xlaunch 프로그램 (예를 들어 XING, MING,
 git clone <<this project>>
 cd pytesseract_tableform_text
 python3 ./sample.py <<file path>>
+
 ```
+## WSL 에서 사용하기
+(작성중)
 
 ## 중간 처리 이미지 저장 기능 활성화
 
@@ -182,3 +185,19 @@ Spreadsheet에서는 모든 Cell이 동일한 수평선을 유지할 경우, 같
   - 현재는 주민등록번호가 있는 부분 Cell 전체를 Painting으로 처리하고 있음. Blurring과 같은 특수 처리가 더 좋을 듯.
 
 
+# Docker image 생성시 발생했던 오류 모음
+
+  - tesseract / ocr이 이미 포함되어 있는 이미지는 https://tesseract-ocr.github.io/tessdoc/Docker-Containers.html 에서 구할 수 있음
+  - dokcer pull 이후에, docker run -it <<image name>> /bin/bash 로 상태확인
+  - 해당 이미지를 보면, python3.5로 구동되게 되어 있음
+  - 필요한 python은 3.8 임
+  - 해당 이미지는 apt package manager를 사용함
+  - python 3.8 설치를 위하여, https://codechacha.com/ko/ubuntu-install-python39/ 링크를 이용
+  - 하지만 오류 발생. WSL상에서 apt-add-repository가 잘 안된다고 함
+  - 이를 우회하기 위하여, https://askubuntu.com/questions/53146/how-do-i-get-add-apt-repository-to-work-through-a-proxy 를 참고하여, 
+  - /etc/apt/sources.list 에 강제로 deadsnakes/ppa 위치를 추가하고, (정확히는, deb http://ppa.launchpad.net/deadsnakes/ppa/ubuntu xenial main)
+  - apt-update를 실행하여 발생한 오류 메시지에서 public key를 찾음
+  - public key를 apt-key 명령어를 이용하여, 등록하려고 했으나 오류가 발생. 
+  - 옵션으로 주는 --keyserver http://keyserver.ubuntu.com 을 --keyserver keyserver.ubuntu.com 으로 변경하니 PGP Key 임포트 성공
+  - apt update로 python3.8 포함되어있는 repository 등록
+  - 이후에는 apt install python3.8 로 설치됨

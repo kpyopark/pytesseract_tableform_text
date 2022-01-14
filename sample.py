@@ -12,6 +12,7 @@ from tablematrix import *
 from random import *
 import json
 import sys
+import io
 
 ENABLE_MASKED_IMAGE_STORED = False
 MASKED_IMAGE_FILE_EXT = '.masked.png'
@@ -419,7 +420,13 @@ def extractTextFromCell(img, cell:TableCell) -> str:
         return ""
 
 def preprocessing(filename):
-    img =  cv2.imread(filename)
+    if filename == 'STDIN':
+        stdin = sys.stdin.buffer.read()
+        # print(stdin)
+        array = np.frombuffer(stdin, dtype='uint8')
+        img = cv2.imdecode(array, 1)
+    else:
+        img =  cv2.imread(filename)
     thresh_inv = convertColor(img)   # 0. Converting color to grey & binarization
     resized = resizeImage(thresh_inv)   # 1. Resizing - Upsampling or Downsampling
     deskewed, angle = dk.deskew(resized) # 2. deskew

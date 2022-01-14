@@ -25,6 +25,34 @@ python3 ./sample.py <<file path>>
 ## WSL 에서 사용하기
 (작성중)
 
+## Docker에서 사용하기
+일단, 해당 프로젝트를 clone 한 이후
+
+docker build -t pytess-table-ocr:0.1 .
+
+로 build를 수행합니다. 기본적으로 STDIN에서 이미지 파일을 처리하도록 구성하였기 때문에, 
+
+docker run -i pytess-table-ocr:0.1 < [local에서 테스트할 파일]
+
+을 수행하면, Json 형태의 Text처리 결과가 표시됩니다. Json Object에 대한 세부 내용은 아래 부분을 참고하세요.
+
+만약, 단순하게 실행하는게 아니고 수정이나, 기타 다른 사항을 구성하고 싶다면, 
+
+docker run -it pytess-table-ocr:0.1 /bin/bash 로 접속해서 /home/pytesseract_table_form_ocr 디렉토리에서 수정해서 테스트를 해보시면 빠르게 결과 값을
+얻어 볼 수 있습니다. 
+
+## 실제 처리 결과 예시
+
+화면을 보기 위해서는, 현재 주석 또는 Debug 로 막혀 있는 부분을 수정해 주어야 한다. 
+예를 들어, sample.py 파일에 있는
+
+def handleFile(filepath):
+    debug = True
+
+로 변경하고 실행하면, 아래와 같은 분석 이미지가 화면에 추가로 표시된다. 
+
+![image](https://user-images.githubusercontent.com/9047122/149486891-b40955d4-3f71-48a5-909c-3d9994b5d647.png)
+
 ## 중간 처리 이미지 저장 기능 활성화
 
 현재, Local File에 있는 Image를 대상으로 처리하게 구성되어 있습니다. 

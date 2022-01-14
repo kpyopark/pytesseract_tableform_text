@@ -10,18 +10,30 @@
  - Key / Value pair
 
 ## Test 방법
-(requirements.txt 정리중)
-필요한 모듈을 pip를 통해서 설치합니다. 
+먼저, 최신 tesseract 모듈을 설치하십시요. 
+gl 라이브러리가 없을 경우, libgl-dev 라이브러리도 아래와 같이 추가해 주세요.
+```
+apt install -y tesseract-ocr curl git libgl-dev
+```
+python3.8 이상과, pip를 설치하십시요.
+```
+apt install -y python3.8 python3.8-distuils
+curl https://bootstrap.pypa.io/get-pip.py -o /home/pytesseract_tableform_ocr/get-pip.py
+python3 cr/get-pip.py
+```
+MacOS나, Windows의 경우, X Windows 시스템이 없기 때문에, x window를 활용할 수 있는 xlaunch 프로그램 (예를 들어 XING, MING, VcXsrv 등)을 설치하셔야 합니다.
 
-(GUI 가 필요할 경우)
-x window를 활용할 수 있는 xlaunch 프로그램 (예를 들어 XING, MING, VcXsrv 등)을 설치하고 기동합니다.
-
+이후 필요한 모듈을 pip를 통해서 설치합니다. 
 ```
 git clone <<this project>>
 cd pytesseract_tableform_text
-python3 ./sample.py <<file path>>
-
+/usr/bin/python3.8 -m pip install -r requirements.txt
 ```
+실제 실행은 아래와 같은 형태로 동작하시면 됩니다.
+```
+python3 ./sample.py <<file path>>
+```
+
 ## WSL 에서 사용하기
 (작성중)
 

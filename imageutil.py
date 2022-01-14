@@ -73,7 +73,7 @@ def getHoughLinePoints(img, pixel, rho, theta, threshold):
 
 def resizeImage(img):
     height, width = img.shape
-    print("height: {}, width : {}".format(height, width))
+    # print("height: {}, width : {}".format(height, width))
     sampling_method = cv2.INTER_LINEAR
     if height * width > MAX_WIDTH * MAX_HEIGHT :
         # This image needs downsampling
@@ -83,11 +83,11 @@ def resizeImage(img):
     
     if width > height :
         newheight = int(height * MAX_WIDTH / width)
-        print("new h : {}, w : {}".format(newheight, MAX_WIDTH))
+        # print("new h : {}, w : {}".format(newheight, MAX_WIDTH))
         tmp = cv2.resize(img, (MAX_WIDTH, newheight), interpolation=sampling_method)
     else :
         newwidth = int(width * MAX_HEIGHT / height)
-        print("new h : {}, w : {}".format(newwidth, MAX_HEIGHT))
+        # print("new h : {}, w : {}".format(newwidth, MAX_HEIGHT))
         tmp = cv2.resize(img, (newwidth, MAX_HEIGHT), interpolation=sampling_method)
     return tmp
 

@@ -1,4 +1,4 @@
-ataclasses==0.6
+# ataclasses==0.6
 numpy==1.22.0
 opencv-python==4.5.5.62
 Pillow==9.0.0

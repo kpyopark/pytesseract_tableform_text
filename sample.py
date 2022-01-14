@@ -463,7 +463,7 @@ def fillTextFromOCR(img, matrix:TableMatrix) -> TableMatrix:
                 # print("roi & text : {}, {}".format(cell.getEffectiveBoundary(), textns))
                 matchedKey = MajorKeyword.matchKeyword(textns)
                 if matchedKey is not None:
-                    print('text:{}, matched Key:{}'.format(text, matchedKey.koreanKeyword))
+                    # print('text:{}, matched Key:{}'.format(text, matchedKey.koreanKeyword))
                     cell.matchedKeyword = matchedKey.koreanKeyword
                 residpattern = '\d{6}[-]*[1-4]\d{6}'
     return matrix

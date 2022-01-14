@@ -20,7 +20,7 @@ def convertColor(img):
 
 def resizeImage(img):
     height, width = img.shape
-    print("height: {}, width : {}".format(height, width))
+    # print("height: {}, width : {}".format(height, width))
     sampling_method = cv2.INTER_LINEAR
     if height * width > MAX_WIDTH * MAX_HEIGHT :
         # This image needs downsampling
@@ -30,11 +30,11 @@ def resizeImage(img):
     
     if width > height :
         newheight = int(height * MAX_WIDTH / width)
-        print("new h : {}, w : {}".format(newheight, MAX_WIDTH))
+        # print("new h : {}, w : {}".format(newheight, MAX_WIDTH))
         tmp = cv2.resize(img, (MAX_WIDTH, newheight), interpolation=sampling_method)
     else :
         newwidth = int(width * MAX_HEIGHT / height)
-        print("new h : {}, w : {}".format(newwidth, MAX_HEIGHT))
+        # print("new h : {}, w : {}".format(newwidth, MAX_HEIGHT))
         tmp = cv2.resize(img, (newwidth, MAX_HEIGHT), interpolation=sampling_method)
     return tmp
 
@@ -53,7 +53,7 @@ def filteredAngle(angles):
 
 def getSkewnessFromVlines(img, vlines):
     angles = []
-    print('vlines:{}'.format(vlines))
+    # print('vlines:{}'.format(vlines))
     for line in vlines:
         for x1,y1,x2,y2 in line:
             if abs(y2-y1) == 0:
@@ -68,11 +68,11 @@ def getSkewnessFromVlines(img, vlines):
                 continue
             angle = math.degrees(math.atan(yd/xd))
             angle = 90 - angle
-            print(angle)
+            # print(angle)
             if abs(angle) > 4:
                 continue
             angles.append(angle)
-    print('v angles:{}'.format(angles))
+    # print('v angles:{}'.format(angles))
     return filteredAngle(angles)
 
 def getSkewnessFromLines(img, lines):
@@ -106,11 +106,11 @@ def getSkewnessFromLines(img, lines):
                 targetlist = hlines[h_milestonpoints[idx]]
                 targetlist.append((x1,y1,x2,y2))
 
-    print('angles:{}'.format(angles))
+    # print('angles:{}'.format(angles))
 
     ## Calculate median value from the longest hline
     anglesfromlline = []
-    print('horizontal lines for skewness detecting: {}'.format(hlines))
+    # print('horizontal lines for skewness detecting: {}'.format(hlines))
     for linepaths in hlines.values():
         linepaths.sort(key=lambda line:line[0])
         x1 = linepaths[0][0] # x1
@@ -122,7 +122,7 @@ def getSkewnessFromLines(img, lines):
         xd = x2-x1
         angle = math.atan(yd/xd)*180/math.pi
         anglesfromlline.append(angle)
-    print(anglesfromlline)
+    # print(anglesfromlline)
 
     ## Calculate via HoughLine
     sorted(h_milestonpoints)
@@ -131,13 +131,13 @@ def getSkewnessFromLines(img, lines):
     angleFromHoughLine = None
     if(len(heights)>0):
         average_span_height = np.median(heights)
-        print('avg height:{}'.format(average_span_height))
+        # print('avg height:{}'.format(average_span_height))
         threshold = 10
         std_line_index = int(np.argmin(abs(heights - average_span_height) < threshold, axis=0))
         std_line_ypoint = h_milestonpoints[std_line_index]
         largest_element = hlines[std_line_ypoint]
         
-        print('largest elements:{}'.format(largest_element))
+        # print('largest elements:{}'.format(largest_element))
         x_values = np.array([])
         x_values = np.append(x_values,sorted(set([item[0] for item in largest_element])))
         x_values = np.append(x_values,sorted(set([item[2] for item in largest_element])))
@@ -146,8 +146,8 @@ def getSkewnessFromLines(img, lines):
         y_values = np.append(y_values,sorted(set([item[3] for item in largest_element])))
         sorted(x_values)
         sorted(y_values)
-        print(x_values)
-        print(y_values)
+        # print(x_values)
+        # print(y_values)
         x1 = int(x_values[0])
         x2 = int(x_values[-1])
         y1 = int(y_values[0])
@@ -156,7 +156,7 @@ def getSkewnessFromLines(img, lines):
             x1,x2 = x2,x1
         if y1 > y2 :
             y1,y2 = y2,y1
-        print('largest elements ROI: {},{},{},{}'.format(x1,x2,y1,y2))        
+        # print('largest elements ROI: {},{},{},{}'.format(x1,x2,y1,y2))        
         roi = img[y1:y2, x1:x2]
         debugShow('lineroi', roi)
 
@@ -166,7 +166,7 @@ def getSkewnessFromLines(img, lines):
             for oneline in houghlines:
                 rho, theta = oneline[0]
                 degree = math.degrees(theta)
-                print('rho, theta, skewness: {}, {}'.format(rho, degree, 90-degree))
+                # print('rho, theta, skewness: {}, {}'.format(rho, degree, 90-degree))
                 angleFromHoughLine = (90-degree) * -1
                 anglefromhline.append(angleFromHoughLine)
                 angleFromHoughLine = filteredAngle(anglefromhline)
@@ -176,7 +176,7 @@ def getSkewnessFromLines(img, lines):
     if angleFromHoughLine is None:
         angleFromHoughLine = 0.0
 
-    print('s.angle, l.angle, h.angle: {}, {}, {}'.format(angleFromShortPaths, angleFromLongestPaths, angleFromHoughLine))
+    # print('s.angle, l.angle, h.angle: {}, {}, {}'.format(angleFromShortPaths, angleFromLongestPaths, angleFromHoughLine))
 
     if abs(angleFromLongestPaths) > abs(angleFromShortPaths):
         if abs(angleFromHoughLine) < abs(angleFromLongestPaths):
@@ -269,7 +269,6 @@ def getAverageAngles(standard_degree, lines):
   filteredlines = []
   for line in lines:
     for x1,y1,x2,y2 in line:
-      # print('x1,y1,x2,y2:{},{},{},{}'.format(x1,y1,x2,y2))
       degree = math.degrees(math.atan2(y1-y2, x2-x1))
       degree = degree - standard_degree
       if abs(degree) < 5:
@@ -295,13 +294,13 @@ def deskew(img):
     min_line_length = multiple * line_length_unit
     line_gap = 10
     hlines = getHLines(img, low_threshold, min_line_length,line_gap, 5)
-    print('max line, # of lines:{},{}'.format(min_line_length, len(hlines)))
+    # print('max line, # of lines:{},{}'.format(min_line_length, len(hlines)))
     if len(hlines) > 3:
       hlines = getHLines(img, low_threshold, min_line_length, line_gap, 10)
       angle, filteredlines = getAverageAngles(0, hlines)
       if len(filteredlines) > 3:
         break
-  print(angle)
+  # print(angle)
   debugShow('lines', drawLines(img, filteredlines), debug)
   angle = angle * -1
   rotatedimg = rotate(img, angle)
@@ -316,13 +315,13 @@ def deskewFromVline(img):
     min_line_length = multiple * line_length_unit
     line_gap = 10
     vlines = getVLines(img, low_threshold, min_line_length,line_gap, 5)
-    print('max line, # of lines:{},{}'.format(min_line_length, len(vlines)))
+    # print('max line, # of lines:{},{}'.format(min_line_length, len(vlines)))
     if len(vlines) > 3:
       vlines = getVLines(img, low_threshold, min_line_length, line_gap, 10)
       angle, filteredlines = getAverageAngles(90, vlines)
       if len(filteredlines) > 3:
         break
-  print(angle)
+  # print(angle)
   debugShow('lines', drawLines(img, filteredlines))
   angle = angle * -1
   rotatedimg = rotate(img, angle)

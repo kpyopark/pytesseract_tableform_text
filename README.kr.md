@@ -9,7 +9,7 @@
  - image masking for Residential ID field.
  - Key / Value pair
 
-## Test 방법
+## 설치 방법
 먼저, 최신 tesseract 모듈을 설치하십시요. 
 gl 라이브러리가 없을 경우, libgl-dev 라이브러리도 아래와 같이 추가해 주세요.
 ```
@@ -35,7 +35,19 @@ python3 ./sample.py <<file path>>
 ```
 
 ## WSL 에서 사용하기
-(작성중)
+
+WSL2에서도 잘 동작됩니다. Ubuntu 버젼에서 정상 동작되는 것을 확인하였습니다. 
+
+WSL2에서 직접 X Window를 구동하기 보다는, Host OS인 Windows 10에 VcXsrv를 설치하셔서 진행하시기 바랍니다. 
+VcXsrv 기동 시, Access Control 부분을 해제하여야 합니다. 
+
+또한, WSL2에서 display packet을 Host에 전달하기 위해서, 환경 변수에 display설정을 해 놓으셔야 합니다.
+
+```
+cd ~
+echo "export DISPLAY=`cat /etc/resolv.conf | grep nameserver | awk '{ print $2 }'`:0" >> .bashrc
+
+```
 
 ## Docker에서 사용하기
 일단, 해당 프로젝트를 clone 한 이후
@@ -61,9 +73,16 @@ docker run -it pytess-table-ocr:0.1 /bin/bash 로 접속해서 /home/pytesseract
 def handleFile(filepath):
     debug = True
 
-로 변경하고 실행하면, 아래와 같은 분석 이미지가 화면에 추가로 표시된다. 
+로 변경하고 실행하면, 아래와 같은 분석 이미지가 화면에 추가로 표시됩니다. 
+자세히 보면, 파란색으로 표시된 것이, 내부에 테이블로 인식된 선들입니다. 
 
 ![image](https://user-images.githubusercontent.com/9047122/149486891-b40955d4-3f71-48a5-909c-3d9994b5d647.png)
+
+두번째 뜨는 화면은 Masking 처리 화면입니다. 주민등록번호란을 아래와 같이 Masking 처리하여 보여줍니다. 
+
+![image](https://user-images.githubusercontent.com/9047122/149602164-ee611fd5-d1ea-48de-8740-bb423448e74e.png)
+
+
 
 ## 중간 처리 이미지 저장 기능 활성화
 

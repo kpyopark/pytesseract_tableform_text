@@ -102,12 +102,36 @@ Key / Pair 를 생성하기 위해서는 일단, 기준이 되는 Key가 필요�
 이 부분을 정의하기 위해서는, sample.py에 있는 MAJOR_KEYWORD_LIST에 한글 키워드을 추가하시기 바랍니다. 
 현재 공공문서에서 많이 활용하는 키워드를 입력해 놓았습니다. 
 
-필요할 경우 해당 List에 추가하시면 됩니다. 
+```
+MAJOR_KEYWORD_LIST = [
+    '주민등록번호',
+    '주민번호',
+    '용도구역',
+    '성명',
+    '용적률',
+    '건축물',
+    '토지',
+    '면적',
+    '지목',
+    '거래가격',
+    '소재지',
+    '전화번호',
+    '이름'
+]
+```
+
+필요할 경우 해당 List에 추가하시면 됩니다.
 
 키워드 매칭을 위하여, Exact matching을 사용할 경우, OCR 오탐오류등으로 인하여 매칭이 안될 수 있습니다. 
 예를 들어, "주민등록번호"의 경우 "즈민등륵빈호" 로 익신 될 수 있습니다. 
-
+ 
 이를 완화하기 위하여 영문첫글자를 추출하여, 자음비교를 수행합니다. OCR에 인식된 Text는 그대로 Cell의 Value값에 들어가 있기 때문에 그대로 활용하면 됩니다.
+
+Value 값은, 다음과 같은 가정을 통해서 추출합니다. 
+일단 Key Cell에 해당하는 오른쪽 셀을 대상으로 키워드 여부를 판단합니다. 만약 Keyword Cell이 아닌 경우, 일반 Cell로 분류하고 해당 Cell 값을 Value Cell로 지정합니다. 
+만약, 오른쪽 셀이 동일한 Key Cell로 분류될 경우, 해당 셀의 하단 셀을 검사하여 Keyword가 있는 Key Cell인지 검출합니다. 
+
+**즉, 키의 오른쪽 아니면 하단에 있는 키값이 아닌 일반 셀을 Value Cell로 맵핑합니다. **
 
 ## Response Body
 
@@ -208,11 +232,11 @@ Hough's line detection을 이용할 때, 초기에는 원본 이미지 횡폭의
 
 이 절차를 끝내고, 적당한 길이의 수평선 검출이 끝나면, 이후에는 수평선의 기울기를 각각 계산한 후 median 값을 계산하여 skewness를 산출합니다.
 
-# Algorithm #2. Denozing
+## Algorithm #2. Denozing
 
 Denoizing 기법은 많이 있지만, 실제로 적용한 알고리즘은 opencv에서 제공하는 fastnlmean 함수를 적용하였습니다. 
 
-# Algorithm #3. Table recognition
+## Algorithm #3. Table recognition
 
 테이블 식별을 위해서 착안한 아이디어는 모든 문서를 Spreadsheet 형태의 수 많은 격자로 구성되어 있다고 가정하는 부분이었습니다. 
 그림 자체에 대한 분석을 위하여 아래 두가지 Class를 생성하였습니다. 

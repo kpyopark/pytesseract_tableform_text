@@ -21,7 +21,8 @@ apt install -y python3.8 python3.8-distuils
 curl https://bootstrap.pypa.io/get-pip.py -o /home/pytesseract_tableform_ocr/get-pip.py
 python3 cr/get-pip.py
 ```
-MacOS나, Windows의 경우, X Windows 시스템이 없기 때문에, x window를 활용할 수 있는 xlaunch 프로그램 (예를 들어 XING, MING, VcXsrv 등)을 설치하셔야 합니다.
+MacOS나, Windows의 경우, X Windows 시스템이 없기 때문에, x window를 활용할 수 있는 xlaunch 프로그램 (예를 들어 Xming, VcXsrv 등)을 설치하셔야 합니다.
+(자세한 사항은 이 Link를 활용하여 해결하였습니다. https://stackoverflow.com/questions/61110603/how-to-set-up-working-x11-forwarding-on-wsl2 )
 
 이후 필요한 모듈을 pip를 통해서 설치합니다. 
 ```

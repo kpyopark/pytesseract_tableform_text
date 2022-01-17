@@ -1,5 +1,7 @@
 # pytesseract_tableform_text
 
+Korean Version. ([Latest](https://github.com/kpyopark/pytesseract_tableform_text/blob/main/README.kr.md))
+
 This program supports the following features. 
 
  - image deskewing

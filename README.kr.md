@@ -254,6 +254,8 @@ class XPointGroup:
 class YPointGroup:
 ```
 
+![image](https://user-images.githubusercontent.com/9047122/149711962-e7923008-f875-43d8-a02d-88e5b6dc065e.png)
+
 XPointGroup 클래스의 경우, 하나의 수직선이 단 한개의 Pixel로 구성되어 있지 않기 때문에, 선을 대표하는 Pixel 집합이 필요했습니다. 
 또한, deskewing을 통하여 이미지를 보정하였다고 하여도, 수평선이 정확하게 동일한 x 축에 있지 않는 경우가 많이 있었습니다. 
 
@@ -267,7 +269,42 @@ Spreadsheet에서는 모든 Cell이 동일한 수평선을 유지할 경우, 같
 
 마찬가지로, 위에서 추출한 XPointGroup을 활용하여, XPointGroup의 갯수만큼 Column 이 있는 큰 테이블 폼을 생각할 수 있습니다. 
 
-<<작성 진행 중>>
+위와 같이 수평선과 수직선을 그룹핑 하면, 
+
+![image](https://user-images.githubusercontent.com/9047122/149712843-6ed4a800-9ed3-49bf-98eb-26a768603bfb.png)
+
+와 같은 격자를 구성할 수 있게 된다. 
+
+여기에서, 자세히 보면 X1, X2는 실제로는 같은 Line으로 인식하지만, 우리는 X Group의 한계치인 30 pixcel이 넘어서는 수직선은 X2의 별도의 선분으로 밖에는 인식을 못하게 됩니다. 
+
+이 부분은 아래에 나오는 Rowspan / Colspan으로 해결합니다. 
+
+먼저, YGroup과 그 다음 YGroup, 즉 두 수평선간에 있는 수직선 여부를 확인하면서 colspan을 진행합니다. 
+
+여기에서 사용하는 주요 Class는
+```
+class TableCell 
+
+class TableMatrix
+```
+입니다. 
+
+여기서 TableCell은 HeadCell 여부를 가지고 있는데, Merge 되지 않은 Cell 자신이거나, Merge가 되었다면 제일 왼쪽 상단에 있는 Cell을 의미합니다.
+
+먼저, Colspan 진행하는 것에 대해서 알아보면, 
+
+![image](https://user-images.githubusercontent.com/9047122/149715641-9823eada-4684-4f58-9e3e-e7a678b29546.png)
+
+와 같이, C0 -> Cn 형태로 순차적으로 넘어가면서 수직선 여부를 확인합니다. 수직선이 없으면, 그 다음 Cell과 Head Cell을 Merge 합니다. 
+
+그 다음은 Rowspan에 확인하는 방법에 대해서 알아보면, 
+
+![image](https://user-images.githubusercontent.com/9047122/149715921-35ed9df6-9ae5-4c34-8144-4786605704fa.png)
+
+와 유사하게, Head Cell을 중심으로 Row by Row를 건너가면서, Cell의 Top line이 CLOSED/OPEN 상태를 확인하게 되어 있습니다. 
+
+즉, 다음 행의 동일 Head Cell간에 Top line이 열려 있다면, 이 경우에는 Merge가 가능하므로, 두 Row간에 Merge작업이 발생합니다. 
+
 
 # To Does 
 

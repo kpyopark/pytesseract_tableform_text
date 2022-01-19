@@ -218,18 +218,19 @@ reponse_body = {
 
 ## Algorithm #1. Image deskewing
 
-많은 공적 문서에는, 테이블을 구성하는 많은 수직/수평선이 포함되어 있습니다. 
-이 부분을 최대한 활용하여, 정확한 수평라인 맞추기를 진행하도록 구성되어 있습니다. 
-Hough's line detection 알고리즘을 이용하여, line을 추출하고, 이후, 이를 atan 함수를 이용하여 기울기를 구하였습니다. 
+In Korea, generally a formal document template consists of one big table with many cells such like the below image.
+![image](https://user-images.githubusercontent.com/9047122/150176270-3e1b8859-81e1-41fc-a2c0-a78979caec64.png)
 
+This application uses it to deskew whole image. 
+At first, this app will detects lines via 'Hough's line detection' - very common algorithm for line detection. 
+After that, the skewness of lines will be calculated by atan function.
 ```
     lines = cv2.HoughLinesP(detected_lines, 1, np.pi / 2, 10, None, 50, 2)
     for line in lines:
       for x1,y1,x2,y2 in line:
         degree = math.degrees(math.atan2(y1-y2, x2-x1))
 ```
-
-실제로는 수평선 추출전에, 약간의 이미지 조작을 통하여, 수평선이 강조된 이미지를 생성하고 이를 이용하여, 수평선을 추출하였습니다.
+Before line detection, this app emphasizes the vertical/horizontal lines in the images.
 
 ```
     kernelForStretchedLine = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
@@ -238,21 +239,23 @@ Hough's line detection 알고리즘을 이용하여, line을 추출하고, 이�
     eroded = cv2.morphologyEx(dilated, cv2.MORPH_ERODE, kernelForRemoveText, iterations=8)
 ```
 
-Hough's line detection을 이용할 때, 초기에는 원본 이미지 횡폭의 90%에 해당하는 Line이 있는지 살펴보고, 적당한 Line이 없다면, 
-10%씩 line 길이를 줄여가면서, 3개 이상의 Line이 검출될 때까지 진행합니다. 
+During line detection, it tries to find longest lines in the image. At first, it tries to find 90% length of total image width. 
+If it can find the longest lines, this app uses it to calculate skewness of image. But when this app wouldn't find the line, it tries to find 80% length of image width.
+Again and agian, it tries to find the longest lines in the image. 
 
-이렇게 하는 이유는, 글자 또는 일반 이미지에 들어가 있는 점들이, Line으로 잘못 인식되는 것을 최대한 방지하기 위함입니다. 
+Houghline algorithm could have many noisy small lines under small length parameter. Trying to find longest lines can prevent to find false-positive line detections.
 
-이 절차를 끝내고, 적당한 길이의 수평선 검출이 끝나면, 이후에는 수평선의 기울기를 각각 계산한 후 median 값을 계산하여 skewness를 산출합니다.
+After line detections, this app calculates median values of some lines groups.
 
 ## Algorithm #2. Denozing
 
-Denoizing 기법은 많이 있지만, 실제로 적용한 알고리즘은 opencv에서 제공하는 fastnlmean 함수를 적용하였습니다. 
+This app adopts fastnlmean function which is supported on OpenCV.
 
 ## Algorithm #3. Table recognition
 
-테이블 식별을 위해서 착안한 아이디어는 모든 문서를 Spreadsheet 형태의 수 많은 격자로 구성되어 있다고 가정하는 부분이었습니다. 
-그림 자체에 대한 분석을 위하여 아래 두가지 Class를 생성하였습니다. 
+Before to analyze table cells in a image, I should assume that a documents can be composed of many cells such like Excel does.
+Under this assumption, I need more specific standards to split cells in the image.
+So the below two classes are induced. 
 
 ```
 class XPointGroup:

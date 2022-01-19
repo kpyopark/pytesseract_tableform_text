@@ -2,8 +2,6 @@
 
 Korean Version. ([Latest](https://github.com/kpyopark/pytesseract_tableform_text/blob/main/README.kr.md))
 
-# pytesseract_tableform_text
-
 This application supports the following features.
 
  - image deskewing
@@ -101,16 +99,18 @@ The second screen is masked image. You can see the masked cells on residential i
 
 ## Enableing intermediate images
 
-현재, Local File에 있는 Image를 대상으로 처리하게 구성되어 있습니다. 
-또한, 주민번호 Cell을 Mask 처리한 이미지는 별도로 저장하지 않습니다. 해당 이미지를 Local에 저장하기 위해서는 sample.py 상단에 있는 ENABLE_MASKED_IMAGE_STORED를
-True로 변경할 경우, 원본 파일이 있는 위치에 '.masked.png' 라는 확장자를 가진 masked image file이 생성됩니다
-유사하게 denoized 된 이미지를 저장할 수 있는 기능을 활성화 하기 위해서는 ENABLE_DENOIZED_IMAGE_STORED 기능을 활성화 해야 합니다.
+At the latest version, only local file and STDIN could be handled on this application.
+And masked image or deskewed/denoized image aren't stored on local file system at default. 
+If you want to store these intermediate files on the file system, you can modify some options in 'sample.py' file.
+To store masked image, modify ENBLE_MASKED_IMAGE_STORED parameter from 'False' to 'True'. After to enable this option, 
+masked file with which file extension is '.masked.png' will be created on the same local direction. 
+Similary, you can modify ENABLE_DENOIZED_IMAGE_STORED option from 'False' to 'True' to store denozied image into local file system.
 
-## 키워드 추출 방법
+## How to keywork-value pairs
 
-Key / Pair 를 생성하기 위해서는 일단, 기준이 되는 Key가 필요합니다. 
-이 부분을 정의하기 위해서는, sample.py에 있는 MAJOR_KEYWORD_LIST에 한글 키워드을 추가하시기 바랍니다. 
-현재 공공문서에서 많이 활용하는 키워드를 입력해 놓았습니다. 
+To extract Key/value pairs, you should set default keyword list on 'sample.py' file.
+To extends keywords list, you can append more keywords into 'MAJOR_KEYWORD_LIST' fields.
+The following keywords are written in sample.py file at default. 
 
 ```
 MAJOR_KEYWORD_LIST = [
@@ -130,27 +130,30 @@ MAJOR_KEYWORD_LIST = [
 ]
 ```
 
-필요할 경우 해당 List에 추가하시면 됩니다.
+You can append additional keywords into the list.
 
-키워드 매칭을 위하여, Exact matching을 사용할 경우, OCR 오탐오류등으로 인하여 매칭이 안될 수 있습니다. 
-예를 들어, "주민등록번호"의 경우 "즈민등륵빈호" 로 익신 될 수 있습니다. 
- 
-이를 완화하기 위하여 영문첫글자를 추출하여, 자음비교를 수행합니다. OCR에 인식된 Text는 그대로 Cell의 Value값에 들어가 있기 때문에 그대로 활용하면 됩니다.
+After text extraction(OCR), this program analyze which cells contains keyword. At that time, 'Keyword Matching algorithm' should be needed. 
+The simplest algorithm is 'exact matching'. But under OCR text, there could be mis-recognized letters such like 'Resido(e)ntial 1(I)D'. So exact matching isn't proper solution in this case. 
+In this app, to convert korean letter to english letter and to extract consonants for each korean letter is a replcement of 'exact matching'. 
+For example, this conversion make "주민등록번호" word to "JMDRBH". After that, matching will be processed. 
 
-Value 값은, 다음과 같은 가정을 통해서 추출합니다. 
-일단 Key Cell에 해당하는 오른쪽 셀을 대상으로 키워드 여부를 판단합니다. 만약 Keyword Cell이 아닌 경우, 일반 Cell로 분류하고 해당 Cell 값을 Value Cell로 지정합니다. 
-만약, 오른쪽 셀이 동일한 Key Cell로 분류될 경우, 해당 셀의 하단 셀을 검사하여 Keyword가 있는 Key Cell인지 검출합니다. 
+Value cell will be fixed the following rules.
 
-**즉, 키의 오른쪽 아니면 하단에 있는 키값이 아닌 일반 셀을 Value Cell로 맵핑합니다. **
+  1. At first, the right cell of the keyword cell would be investigated. "Is it keyword cell or not?".
+  2. If the right cell isn't detected as a keyword cell, this cell be categorized as 'value' cell. 
+  3. If the right cell has keyword (so this cell also might be 'keyword' cell), the bottom of the keyword cell will be investigated.
+  4. If the bottom cell has no keyword, this cell will be assigned as a 'value' cell.
+
+** In short words, generally right or bottom of the key cell will be selected as a value cell. **
 
 ## Response Body
 
-현재 입력은 Input File Path만 잡게 되어 있습니다. 향후에는 serverless 상에서 다양한 옵션을 활용할 수 있도록 지원할 예정입니다.
-이후, 처리 후 결과는 ResponseBody라는 클래스에 집결되어 JSON 형태로 전환됩니다. 
+Lastest version of this app only accepts 'image file path' as a input parameter. In the furture, many other options will be added as input parameters.
+All results of the process will be aggregated into one JSON object (Response Object)
 
-Response Body를 보면 먼저, 
-원본이미지와 Resized 이미지의 정보를 담고 있고, 이후, 문서의 수평기울기(비틀림)을 Degree 형태로 보여주는 Skewness 항목이 있습니다. 
-이후, tables 항목에서는 각 Cell 단위별, rowspancolspan및 실제 merge되어 있는 활성화되어 있는 cell 의 box 정보와 OCR에서 추출한 Text 정보가 들어 있습니다.
+In the Response Body,
+'imagesize' attributes has size of 'original' and 'resized' image (for OCR extraction), and 'skewness' which points the angle of skewness of the input image, 
+and 'tables' attribute shows all the cell information which includes texts and boundaries.
 ```
 reponse_body = {
     'imagesize' : {

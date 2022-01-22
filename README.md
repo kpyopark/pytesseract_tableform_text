@@ -219,6 +219,7 @@ reponse_body = {
 ## Algorithm #1. Image deskewing
 
 In Korea, generally a formal document template consists of one big table with many cells such like the below image.
+
 ![image](https://user-images.githubusercontent.com/9047122/150176270-3e1b8859-81e1-41fc-a2c0-a78979caec64.png)
 
 This application uses it to deskew whole image. 
@@ -266,81 +267,88 @@ class YPointGroup:
 
 ![image](https://user-images.githubusercontent.com/9047122/149711962-e7923008-f875-43d8-a02d-88e5b6dc065e.png)
 
-XPointGroup 클래스의 경우, 하나의 수직선이 단 한개의 Pixel로 구성되어 있지 않기 때문에, 선을 대표하는 Pixel 집합이 필요했습니다. 
-또한, deskewing을 통하여 이미지를 보정하였다고 하여도, 수평선이 정확하게 동일한 x 축에 있지 않는 경우가 많이 있었습니다. 
+The purpose of XPointGroup is grouping of vertical lines(pixels). As you can see the above image, logical line consists of many pixels.
+XPointGroup can represent one logical vertical line. In general, original images tend to be distorted and skewed. So even one vertical line
+has different x positions. XPointGroup can analyze this situation and recognize one logical line under spread pixels.
 
-따라서, 어는 정도 오차 범위에 있는 동일한 수평선을 하나의 수평선으로 인식하게 해 줄 수 있는 장치가 필요했습니다. 
+YPoingGroup class has similar purpose for logical horizontal lines. In a distorted image, one hozontal line can show various y positions. 
 
-YPointGroup 클래스도 유사한 역할을 합니다. 즉 이미지에서 하나로 보이는, 수평선이 데이터 상으로는 여러개의 Y축에서 보일 수가 있었습니다. 
-이 부분은, Skewness로 인한 문제도 포함됩니다. 즉 살짝 이미지가 뒤틀려 있다고 해도, 하나의 수평선의 제일 하단부와 상단부는 큰 차이가 날 수 있습니다. 
+Using these two classes, this application analyze boundary of each cell of a whole document.
 
-이 두가지 Class를 이용하여, 수직선과 수평선의 길이와 위치의 대략적인(정확하지 않은...) 경계선을 확인합니다.
-Spreadsheet에서는 모든 Cell이 동일한 수평선을 유지할 경우, 같은 Row로 인식하고, 동일한 시작위치를 같게되는 cell을 column으로 인식합니다. 
-
-마찬가지로, 위에서 추출한 XPointGroup을 활용하여, XPointGroup의 갯수만큼 Column 이 있는 큰 테이블 폼을 생각할 수 있습니다. 
-
-위와 같이 수평선과 수직선을 그룹핑 하면, 
+The cell bounday analyzed by these two classes can be shown the below image.
 
 ![image](https://user-images.githubusercontent.com/9047122/149712843-6ed4a800-9ed3-49bf-98eb-26a768603bfb.png)
 
-와 같은 격자를 구성할 수 있게 된다. 
+In more specific view, position X1, X2 is a points on one line, but XPointGroup will divide two separate lines cause of its exceed of 30 pixel tolerance.
 
-여기에서, 자세히 보면 X1, X2는 실제로는 같은 Line으로 인식하지만, 우리는 X Group의 한계치인 30 pixcel이 넘어서는 수직선은 X2의 별도의 선분으로 밖에는 인식을 못하게 됩니다. 
+So, one logical line could be saparated into two different lines. How to handle this situation ? The answer is merging columns(colspan).
 
-이 부분은 아래에 나오는 Rowspan / Colspan으로 해결합니다. 
+This application can handle this with rowspan/colspan. 
 
-먼저, YGroup과 그 다음 YGroup, 즉 두 수평선간에 있는 수직선 여부를 확인하면서 colspan을 진행합니다. 
+To detect column span, it checks whether there is a vertical line between each cells from right to left side with the following classes
 
-여기에서 사용하는 주요 Class는
 ```
 class TableCell 
 
 class TableMatrix
 ```
-입니다. 
 
-여기서 TableCell은 HeadCell 여부를 가지고 있는데, Merge 되지 않은 Cell 자신이거나, Merge가 되었다면 제일 왼쪽 상단에 있는 Cell을 의미합니다.
-
-먼저, Colspan 진행하는 것에 대해서 알아보면, 
+TableCell class represent a logical cell of a table. It has 'merged' status in it. If two cells is merged, the left top cell will become a head cell.
 
 ![image](https://user-images.githubusercontent.com/9047122/149715641-9823eada-4684-4f58-9e3e-e7a678b29546.png)
 
-와 같이, C0 -> Cn 형태로 순차적으로 넘어가면서 수직선 여부를 확인합니다. 수직선이 없으면, 그 다음 Cell과 Head Cell을 Merge 합니다. 
+You can see the direction from left to right - C0 -> Cn. If there is no vertical line between cell, these neighboring cells would be merged. 
 
-그 다음은 Rowspan에 확인하는 방법에 대해서 알아보면, 
+Detecting rowspan is progressing in a very similar way.
 
 ![image](https://user-images.githubusercontent.com/9047122/149715921-35ed9df6-9ae5-4c34-8144-4786605704fa.png)
 
-와 유사하게, Head Cell을 중심으로 Row by Row를 건너가면서, Cell의 Top line이 CLOSED/OPEN 상태를 확인하게 되어 있습니다. 
-
-즉, 다음 행의 동일 Head Cell간에 Top line이 열려 있다면, 이 경우에는 Merge가 가능하므로, 두 Row간에 Merge작업이 발생합니다. 
+In rowspan detection, only head cells can be applied to detect rowspan. And cells without horizontal line between them would be merged/
 
 
 # To Does 
 
-  - 한글 인식을 위해서 사용한 내용은 Tesseract 기본 한글 인식 Set을 이용하였음. 이를 계선하기 위하여 궁서/나눔/굴림/나눔에 대한 Training 필요
-  - 현재 Line Detection을 위해서 최대 수평선을 구하고, 평균값을 활용하여 Skewness를 구하고 있음. 이 부분에 ML 적용을 하면 더 좋을 듯
-  - 일부 페이지에 대한 굴곡이 발생하였을 경우, 예를 들어 scanning 시점에 종이가 말려있거나 사직을 찍어서 보낸 경우, 이를 보완하는 로직이 추가되어야 함
-  - 수평선/수직선 검출이 아직 미비하여, 명확한 Cell 인식이 안되는 부분
-  - 큰 글자가 많을 경우, 글자안에 포함되어 있는 Pixel을 선분으로 인식하는 경우가 있음
-  - 현재는 주민등록번호가 있는 부분 Cell 전체를 Painting으로 처리하고 있음. Blurring과 같은 특수 처리가 더 좋을 듯.
+  - Tesseract best-fit korean traindata used. It might be improved more accurately based on the real data.
+  - The way with the skewness be calculated is very heuristic way. This part might be improved based on ML technique.
+  - Some parts of the document could be very curved. Flattening them could give us more accurate result.
+  - Horizontal/Vertical line detection must be more improved.
+  - Big letter could be recognized as a big lines. 
+  - Code Quality is very poor
+  - Currently, the entire cell with a resident registration number is masked through painting. A special masking such as blurring would be better.
 
+# References
 
-# Docker image 생성시 발생했던 오류 모음
+1.	Tesseract OCR
+https://www.pyimagesearch.com/2020/09/07/ocr-a-document-form-or-invoice-with-tesseract-opencv-and-python/
+2.	Find Rectangle
+https://stackoverflow.com/questions/57196047/how-to-detect-all-the-rectangular-boxes-in-the-given-image
+3.	Enhanced OCR recognition ratio
+https://ddolcat.tistory.com/954
+4.	Otsu thresholding
+https://opencv-python.readthedocs.io/en/latest/doc/09.imageThresholding/imageThresholding.html
+5.	Installation of python opencv
+https://www.codesd.com/item/installing-opencv-python-on-amazon-linux-apache.html
+https://pythonprogramming.net/loading-images-python-opencv-tutorial/
+6.	Using opencv on Lambda
+https://betterprogramming.pub/creating-a-python-opencv-layer-for-aws-lambda-f2d5266d3e5d
+https://typless.com/tesseract-on-aws-lambda-ocr-as-a-service/
+7.	Install tesseract
+https://stackoverflow.com/questions/61208140/install-tesseract-for-aws-linux
+8.	Korean OCR with Keras
+https://github.com/Wongi-Choi1014/Korean-OCR-Model-Design-based-on-Keras-CNN
+9.	Text area detection
+https://d2.naver.com/helloworld/8344782
+10.	Pytesseract example with openCV
+https://stackoverflow.com/questions/66463697/text-blur-after-thresholding-using-opencv
+11.	Curved Text flattening
+http://www.daniel.umiacs.io/daniel_papersfordownload/liang-j_cvpr2005.pdf
+https://www.cv-foundation.org/openaccess/content_cvpr_2014/papers/Meng_Active_Flattening_of_2014_CVPR_paper.pdf
+12.	Extract ROIs from full image
+https://stackoverflow.com/questions/9084609/how-to-copy-a-image-region-using-opencv-in-python
+13.	Extract Korean Text with tesseract
+https://github.com/tesseract-ocr/tessdata_best
 
-  - tesseract / ocr이 이미 포함되어 있는 이미지는 https://tesseract-ocr.github.io/tessdoc/Docker-Containers.html 에서 구할 수 있음
-  - dokcer pull 이후에, docker run -it <<image name>> /bin/bash 로 상태확인
-  - 해당 이미지를 보면, python3.5로 구동되게 되어 있음
-  - 필요한 python은 3.8 임
-  - 해당 이미지는 apt package manager를 사용함
-  - python 3.8 설치를 위하여, https://codechacha.com/ko/ubuntu-install-python39/ 링크를 이용
-  - 하지만 오류 발생. WSL상에서 apt-add-repository가 잘 안된다고 함
-  - 이를 우회하기 위하여, https://askubuntu.com/questions/53146/how-do-i-get-add-apt-repository-to-work-through-a-proxy 를 참고하여, 
-  - /etc/apt/sources.list 에 강제로 deadsnakes/ppa 위치를 추가하고, (정확히는, deb http://ppa.launchpad.net/deadsnakes/ppa/ubuntu xenial main)
-  - apt-update를 실행하여 발생한 오류 메시지에서 public key를 찾음
-  - public key를 apt-key 명령어를 이용하여, 등록하려고 했으나 오류가 발생. 
-  - 옵션으로 주는 --keyserver http://keyserver.ubuntu.com 을 --keyserver keyserver.ubuntu.com 으로 변경하니 PGP Key 임포트 성공
-  - apt update로 python3.8 포함되어있는 repository 등록
-  - 이후에는 apt install python3.8 로 설치됨
+14.	Detecting Overlapped areas
+https://stackoverflow.com/questions/62350446/how-to-detect-overlapping-or-embedded-rectangle-in-python-opencv
 
 
